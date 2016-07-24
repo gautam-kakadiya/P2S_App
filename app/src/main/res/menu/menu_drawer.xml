@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group
+        android:id="@+id/group1"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/account_updates"
+            android:icon="@drawable/ic_notifications_black_24dp"
+            android:title="Account Updates" />
+        <item
+            android:id="@+id/rfqs"
+            android:icon="@drawable/ic_rate_review_black_24dp"
+            android:title="Quote Requests" />
+        <item
+            android:id="@+id/my_orders"
+            android:icon="@drawable/ic_local_shipping_black_24dp"
+            android:title="Orders" />
+    </group>
+    <group android:id="@+id/group2" android:checkableBehavior="single">
+        <item
+            android:id="@+id/profile"
+            android:icon="@drawable/ic_account_circle_black_24dp"
+            android:title="My Account" />
+        <item
+            android:id="@+id/contact_details"
+            android:icon="@drawable/ic_contact_phone_black_24dp"
+            android:title="Contact Details" />
+        <item
+            android:id="@+id/Address"
+            android:icon="@drawable/ic_person_pin_circle_black_24dp"
+            android:title="My Addresses" />
+    </group>
+
+    <group android:id="@+id/group3" android:checkableBehavior="single">
+        <item
+            android:id="@+id/sme_khabar"
+            android:icon="@drawable/ic_newspaper_black_24dp"
+            android:title="SME Khabar" />
+        <item
+            android:id="@+id/contact_us"
+            android:icon="@drawable/ic_contact_mail_black_24dp"
+            android:title="Contact Us" />
+        <item
+            android:id="@+id/about_us"
+            android:icon="@drawable/ic_info_black_24dp"
+            android:title="About Us" />
+        <item
+            android:id="@+id/log_out"
+            android:icon="@drawable/ic_power_settings_new_black_24dp"
+            android:title="Logout" />
+    </group>
+</menu>
