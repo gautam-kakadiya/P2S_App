@@ -8,38 +8,89 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    android:gravity="center"
+    android:gravity="center_horizontal"
     android:orientation="vertical"
     android:background="@color/colorPrimary"
     tools:context="com.utils.gdkcorp.p2sapp.LoginActivity">
 
-
-    <android.support.design.widget.TextInputLayout
+    <ImageView
+        android:layout_width="240dp"
+        android:layout_height="240dp"
+        android:src="@drawable/login_art"
+        android:layout_margin="4dp"/>
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="8dp">
-        <EditText
-            android:layout_width="match_parent"
+        android:orientation="vertical"
+        android:layout_margin="8dp"
+        android:gravity="center_horizontal">
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:hint="Username"/>
-    </android.support.design.widget.TextInputLayout>
+            android:text="WELCOME"
+            android:textColor="@android:color/white"
+            android:textSize="24dp"
+            />
 
-    <android.support.design.widget.TextInputLayout
-        android:layout_width="match_parent"
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@android:color/white"
+            android:text="PLease login to use the app"
+            android:textSize="16dp"
+            android:layout_margin="4dp"/>
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="8dp">
-        <EditText
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Password"/>
-    </android.support.design.widget.TextInputLayout>
+        android:text="Create an account"
+        android:textSize="20dp"
+        android:textColor="@color/colorPrimaryDark" />
 
+   <LinearLayout
+       android:layout_width="match_parent"
+       android:layout_height="wrap_content"
+       android:orientation="vertical">
+       <android.support.design.widget.TextInputLayout
+           android:layout_width="match_parent"
+           android:layout_height="wrap_content"
+           android:textColorHint="@color/colorPrimaryDark">
+           <EditText
+               android:id="@+id/user_name"
+               android:layout_width="match_parent"
+               android:layout_height="wrap_content"
+               android:hint="Username"
+               android:textColor="@android:color/white"/>
+       </android.support.design.widget.TextInputLayout>
+
+       <android.support.design.widget.TextInputLayout
+           android:layout_width="match_parent"
+           android:layout_height="wrap_content"
+           android:textColorHint="@color/colorPrimaryDark">
+           <EditText
+               android:id="@+id/password"
+               android:layout_width="match_parent"
+               android:layout_height="wrap_content"
+               android:hint="Password"
+               android:textColor="@android:color/white"/>
+       </android.support.design.widget.TextInputLayout>
+   </LinearLayout>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Forgot password"
+        android:textColor="@color/colorPrimaryDark"
+        android:layout_margin="8dp"/>
     <Button
+        android:id="@+id/login_button"
         android:layout_width="160dp"
         android:layout_height="wrap_content"
         android:text="Login"
         android:textAllCaps="false"
         android:background="@drawable/my_button"
         android:textSize="20dp"
+        android:layout_margin="4dp"
         android:textColor="@android:color/white"/>
 </LinearLayout>
