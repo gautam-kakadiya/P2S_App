@@ -1,9 +1,11 @@
 package com.utils.gdkcorp.p2sapp;
 
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
@@ -18,6 +20,7 @@ import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
+import android.view.View;
 import android.widget.ImageView;
 
 public class MainActivity extends AppCompatActivity {
@@ -34,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
     private FragmentManager fmng;
     private ImageView appbar_imgview;
     private ViewPagerAdapter mPagerAdapter;
+    private FloatingActionButton fab;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +50,14 @@ public class MainActivity extends AppCompatActivity {
         Log.d("Height",dpHeight+"");
         Log.d("Width",dpWidth+"");
 
+        fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this,ApacheNLPActivity.class);
+                startActivity(intent);
+            }
+        });
         appbar_imgview = (ImageView) findViewById(R.id.appbar_imgview);
         mDrawerLayout= (DrawerLayout) findViewById(R.id.drawer_layout);
         coordinator_layout= (CoordinatorLayout) findViewById(R.id.root_coordinator);
