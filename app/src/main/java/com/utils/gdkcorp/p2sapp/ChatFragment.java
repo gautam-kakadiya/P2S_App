@@ -2,6 +2,7 @@ package com.utils.gdkcorp.p2sapp;
 
 
 import android.content.Context;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
@@ -9,6 +10,7 @@ import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,7 +18,17 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageButton;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+
+import opennlp.tools.namefind.NameFinderME;
+import opennlp.tools.namefind.TokenNameFinderModel;
+import opennlp.tools.tokenize.Tokenizer;
+import opennlp.tools.tokenize.TokenizerME;
+import opennlp.tools.tokenize.TokenizerModel;
+import opennlp.tools.util.InvalidFormatException;
+import opennlp.tools.util.Span;
 
 
 /**
@@ -139,6 +151,74 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
                     chat_rview.scrollToPosition(adapter.getItemCount()-1);
                 }
             }, 3000);
+        }else{
+            try {
+              String[] tokens = tokenize(msg);
+                Log.d("tokenized", "responce: ");
+                new MyAsyncTask1().execute(tokens);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+    }
+
+    private String[] tokenize(String msg) throws IOException {
+        InputStream modelIn = getActivity().getAssets().open("en-token.bin");
+        TokenizerModel model = new TokenizerModel(modelIn);
+        Tokenizer tokenizer = new TokenizerME(model);
+        String tokens[] = tokenizer.tokenize(msg);
+        return tokens;
+    }
+
+    public class MyAsyncTask1 extends AsyncTask<String[],ChatMessage,Void>{
+
+
+
+        @Override
+        protected void onPreExecute() {
+
+        }
+
+        @Override
+        protected Void doInBackground(String[]... strings) {
+            InputStream modelIn;
+            try {
+                String tokens[] = strings[0];
+                modelIn = getActivity().getAssets().open("en-ner-product.bin");
+                TokenNameFinderModel model = new TokenNameFinderModel(modelIn);
+                NameFinderME namefinder = new NameFinderME(model);
+                Log.d("string[0]_length", "doInBackground: " + strings[0].length);
+                Span span[] = namefinder.find(tokens);
+                ChatMessage chatmsg = new ChatMessage();
+                chatmsg.setIsMe(false);
+                StringBuilder msg = new StringBuilder("");
+                for(int i=0;i<span.length;++i){
+                    for(int j = span[i].getStart() ; j<span[i].getEnd() ; ++j){
+                        msg.append(tokens[j]+" ");
+                    }
+                    msg.append(" | ");
+                }
+                Log.d("current_data", "doInBackground: " + msg.toString());
+                chatmsg.setMsg(msg.toString());
+                publishProgress(chatmsg);
+            } catch (InvalidFormatException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(ChatMessage... values) {
+            adapter.addMsg(values[0]);
+            chat_rview.scrollToPosition(adapter.getItemCount()-1);
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+
         }
     }
 }
