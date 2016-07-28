@@ -51,7 +51,7 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
-
+    private StringBuilder msg;
 
     public ChatFragment() {
         // Required empty public constructor
@@ -116,10 +116,10 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
             chatMessage.setIsMe(true);
             adapter.addMsg(chatMessage);
             edit_chat_msg.setText("");
-            chat_rview.scrollToPosition(adapter.getItemCount()-1);
+            chat_rview.scrollToPosition(adapter.getItemCount() - 1);
             View view1 = getActivity().getCurrentFocus();
             if (view1 != null) {
-                InputMethodManager imm = (InputMethodManager)getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+                InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
                 imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
             }
             responce(chatMessage.getMsg());
@@ -138,7 +138,7 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
                     chat_msg.setMsg("Typing...");
                     chat_msg.setIsMe(false);
                     adapter.addMsg(chat_msg);
-                    chat_rview.scrollToPosition(adapter.getItemCount()-1);
+                    chat_rview.scrollToPosition(adapter.getItemCount() - 1);
                 }
             }, 1000);
             handler.postDelayed(new Runnable() {
@@ -148,18 +148,11 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
                     chtmsg.setMsg("Hello sir,How may I help you?");
                     chtmsg.setIsMe(false);
                     adapter.refreshlastmsg(chtmsg);
-                    chat_rview.scrollToPosition(adapter.getItemCount()-1);
+                    chat_rview.scrollToPosition(adapter.getItemCount() - 1);
                 }
             }, 3000);
-        }else{
-            try {
-              String[] tokens = tokenize(msg);
-                Log.d("tokenized", "responce: ");
-                new MyAsyncTask1().execute(tokens);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
+        } else {
+            new MyAsyncTask1().execute(msg);
         }
     }
 
@@ -171,8 +164,7 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
         return tokens;
     }
 
-    public class MyAsyncTask1 extends AsyncTask<String[],ChatMessage,Void>{
-
+    public class MyAsyncTask1 extends AsyncTask<String, ChatMessage, Void> {
 
 
         @Override
@@ -181,21 +173,21 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
         }
 
         @Override
-        protected Void doInBackground(String[]... strings) {
+        protected Void doInBackground(String... strings) {
             InputStream modelIn;
             try {
-                String tokens[] = strings[0];
+                String tokens[] = tokenize(strings[0]);
                 modelIn = getActivity().getAssets().open("en-ner-product.bin");
                 TokenNameFinderModel model = new TokenNameFinderModel(modelIn);
                 NameFinderME namefinder = new NameFinderME(model);
-                Log.d("string[0]_length", "doInBackground: " + strings[0].length);
+                  Log.d("string[0]_length", "doInBackground: " + tokens.length);
                 Span span[] = namefinder.find(tokens);
                 ChatMessage chatmsg = new ChatMessage();
                 chatmsg.setIsMe(false);
-                StringBuilder msg = new StringBuilder("");
-                for(int i=0;i<span.length;++i){
-                    for(int j = span[i].getStart() ; j<span[i].getEnd() ; ++j){
-                        msg.append(tokens[j]+" ");
+                msg = new StringBuilder("");
+                for (int i = 0; i < span.length; ++i) {
+                    for (int j = span[i].getStart(); j < span[i].getEnd(); ++j) {
+                        msg.append(tokens[j] + " ");
                     }
                     msg.append(" | ");
                 }
@@ -213,7 +205,7 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
         @Override
         protected void onProgressUpdate(ChatMessage... values) {
             adapter.addMsg(values[0]);
-            chat_rview.scrollToPosition(adapter.getItemCount()-1);
+            chat_rview.scrollToPosition(adapter.getItemCount() - 1);
         }
 
         @Override
