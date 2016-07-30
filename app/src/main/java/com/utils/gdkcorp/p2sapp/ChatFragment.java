@@ -51,7 +51,8 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
-    private StringBuilder msg;
+    private StringBuilder  msg = new StringBuilder("");
+    private CurrentProduct cp = new CurrentProduct();
 
     public ChatFragment() {
         // Required empty public constructor
@@ -111,6 +112,13 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
         if (edit_chat_msg.getText().toString().equalsIgnoreCase("")) {
             edit_chat_msg.setError("Enter some text first");
         } else {
+           /* String message = edit_chat_msg.getText().toString();
+            edit_chat_msg.setText("");
+            hideKeyboard(view);
+            generateChatMessage(edit_chat_msg.getText().toString(),true,false);
+            generateTypingResponce();
+            generateResponce(message);*/
+
             ChatMessage chatMessage = new ChatMessage();
             chatMessage.setMsg(edit_chat_msg.getText().toString());
             chatMessage.setIsMe(true);
@@ -122,13 +130,55 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
                 InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
                 imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
             }
-            responce(chatMessage.getMsg());
+            try {
+                responce(chatMessage.getMsg());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
         }
 
     }
 
-    private void responce(String msg) {
+    private void generateResponce(String message) {
+
+    }
+
+    private void generateTypingResponce() {
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                ChatMessage chat_msg = new ChatMessage();
+                chat_msg.setMsg("Typing...");
+                chat_msg.setIsMe(false);
+                adapter.addMsg(chat_msg);
+                chat_rview.scrollToPosition(adapter.getItemCount() - 1);
+            }
+        }, 1000);
+    }
+
+    private void generateChatMessage(String s, boolean isMe,boolean replaceLast ) {
+        ChatMessage msg = new ChatMessage();
+        msg.setMsg(s);
+        msg.setIsMe(isMe);
+        if(replaceLast){
+            adapter.refreshlastmsg(msg);
+        }else{
+            adapter.addMsg(msg);
+        }
+        chat_rview.scrollToPosition(adapter.getItemCount() - 1);
+    }
+
+    private void hideKeyboard(View view) {
+        View view1 = getActivity().getCurrentFocus();
+        if (view1 != null) {
+            InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
+    }
+
+    private void responce(String msg) throws IOException {
         if (msg.toLowerCase().equalsIgnoreCase("hi")) {
             final Handler handler = new Handler();
             handler.postDelayed(new Runnable() {
@@ -152,7 +202,12 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
                 }
             }, 3000);
         } else {
-            new MyAsyncTask1().execute(msg);
+            String[] tokens = tokenize(msg);
+            new CategorizeTask().execute(tokens);
+            new SubCategorizeTask().execute(tokens);
+            new BrandDetectionTask().execute(tokens);
+            //ChatMessage chatMessage = cp.genrate_msg();
+            //adapter.addMsg(chatMessage);
         }
     }
 
@@ -164,7 +219,7 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
         return tokens;
     }
 
-    public class MyAsyncTask1 extends AsyncTask<String, ChatMessage, Void> {
+    public class CategorizeTask extends AsyncTask<String[], String, Void> {
 
 
         @Override
@@ -173,27 +228,19 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
         }
 
         @Override
-        protected Void doInBackground(String... strings) {
+        protected Void doInBackground(String[]... strings) {
             InputStream modelIn;
             try {
-                String tokens[] = tokenize(strings[0]);
-                modelIn = getActivity().getAssets().open("en-ner-product.bin");
+                String tokens[] = strings[0];
+                modelIn = getActivity().getAssets().open("en-ner-category.bin");
                 TokenNameFinderModel model = new TokenNameFinderModel(modelIn);
                 NameFinderME namefinder = new NameFinderME(model);
-                  Log.d("string[0]_length", "doInBackground: " + tokens.length);
+                Log.d("string[0]_length", "doInBackground: " + tokens.length);
                 Span span[] = namefinder.find(tokens);
-                ChatMessage chatmsg = new ChatMessage();
-                chatmsg.setIsMe(false);
-                msg = new StringBuilder("");
-                for (int i = 0; i < span.length; ++i) {
-                    for (int j = span[i].getStart(); j < span[i].getEnd(); ++j) {
-                        msg.append(tokens[j] + " ");
-                    }
-                    msg.append(" | ");
+                for(int i =0 ;i<span.length;++i){
+                    publishProgress(span[i].getType());
                 }
-                Log.d("current_data", "doInBackground: " + msg.toString());
-                chatmsg.setMsg(msg.toString());
-                publishProgress(chatmsg);
+
             } catch (InvalidFormatException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -203,14 +250,103 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
         }
 
         @Override
-        protected void onProgressUpdate(ChatMessage... values) {
-            adapter.addMsg(values[0]);
-            chat_rview.scrollToPosition(adapter.getItemCount() - 1);
+        protected void onProgressUpdate(String... values) {
+           String  category = values[0];
+            Log.d("product", "catagory: " + category);
+            cp.categories.add(category);
         }
 
         @Override
         protected void onPostExecute(Void aVoid) {
 
+        }
+    }
+
+    public class SubCategorizeTask extends AsyncTask<String[], String, Void> {
+
+
+        @Override
+        protected void onPreExecute() {
+
+        }
+
+        @Override
+        protected Void doInBackground(String[]... strings) {
+            InputStream modelIn;
+            try {
+                String tokens[] = strings[0];
+                modelIn = getActivity().getAssets().open("en-ner-sub-category1.bin");
+                TokenNameFinderModel model = new TokenNameFinderModel(modelIn);
+                NameFinderME namefinder = new NameFinderME(model);
+                Log.d("string[0]_length", "doInBackground: " + tokens.length);
+                Span span[] = namefinder.find(tokens);
+                for(int i =0 ;i<span.length;++i){
+                    publishProgress(span[i].getType());
+                }
+
+            } catch (InvalidFormatException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(String... values) {
+            String subcategory = values[0];
+            Log.d("product", "subcatagory: " + subcategory);
+            cp.sub_catagories.add(subcategory);
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+
+        }
+    }
+
+    public class BrandDetectionTask extends AsyncTask<String[], String, Void> {
+
+
+        @Override
+        protected void onPreExecute() {
+
+        }
+
+        @Override
+        protected Void doInBackground(String[]... strings) {
+            InputStream modelIn;
+            try {
+                String tokens[] = strings[0];
+                modelIn = getActivity().getAssets().open("en-ner-brand.bin");
+                TokenNameFinderModel model = new TokenNameFinderModel(modelIn);
+                NameFinderME namefinder = new NameFinderME(model);
+                Log.d("string[0]_length", "doInBackground: " + tokens.length);
+                Span span[] = namefinder.find(tokens);
+                for(int i =0 ;i<span.length;++i){
+                    publishProgress(span[i].getType());
+                }
+
+            } catch (InvalidFormatException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(String... values) {
+            String brand = values[0];
+            Log.d("product", "brand: " + brand);
+            cp.brands.add(brand);
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            Log.d("product", "cp :" + cp.categories.size()+":"+cp.sub_catagories.size());
+            ChatMessage chatMessage = cp.genrateProduct();
+            adapter.addMsg(chatMessage);
         }
     }
 }

@@ -61,7 +61,7 @@ public class ApacheNLPActivity extends AppCompatActivity {
         protected Void doInBackground(String[]... strings) {
             InputStream modelIn;
             try {
-                modelIn = getAssets().open("en-ner-product.bin");
+                modelIn = getAssets().open("en-ner-category.bin");
                 TokenNameFinderModel model = new TokenNameFinderModel(modelIn);
                 NameFinderME namefinder = new NameFinderME(model);
                 Log.d("string[0]_length", "doInBackground: "+strings[0].length);
