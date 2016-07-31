@@ -19,6 +19,7 @@
         android:layout_height="wrap_content"
         android:text="Dummy Text"
         android:padding="8dp"
+        android:autoLink="web"
         android:background="@drawable/my_chat_text_bg"
         android:textColor="@android:color/white"
         android:textSize="16sp"/>

@@ -1,6 +1,8 @@
 package com.utils.gdkcorp.p2sapp;
 
+import android.app.Activity;
 import android.content.Context;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Gravity;
@@ -22,10 +24,12 @@ public class ChatRecyclerViewAdapter extends RecyclerView.Adapter<ChatRecyclerVi
 
     ArrayList<ChatMessage> list;
     LayoutInflater inflater;
+    ChildActivity context;
 
     ChatRecyclerViewAdapter(Context context,ArrayList<ChatMessage> list){
         inflater = LayoutInflater.from(context);
         this.list=list;
+        this.context=(ChildActivity) context;
     }
 
     @Override
@@ -79,6 +83,15 @@ public class ChatRecyclerViewAdapter extends RecyclerView.Adapter<ChatRecyclerVi
             cv = (CircleImageView) itemView.findViewById(R.id.chat_circleImageView);
             tv = (TextView) itemView.findViewById(R.id.chat_msg_text_view);
             root = (LinearLayout) itemView.findViewById(R.id.linear_layout_chat_item);
+            tv.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    ConfirmProductDialog dialog = new ConfirmProductDialog();
+                    dialog.show(context.getFragmentManager(),"yDialog");
+
+                }
+            });
         }
     }
+
 }

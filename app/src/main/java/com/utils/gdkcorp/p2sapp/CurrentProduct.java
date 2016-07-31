@@ -12,8 +12,7 @@ public class CurrentProduct {
     ArrayList<String> sub_catagories = new ArrayList<String>();
     ArrayList<String> brands = new ArrayList<String>();
 
-    public ChatMessage genrateProduct(){
-        ChatMessage msg = new ChatMessage();
+    public String genrateProduct(){
         StringBuilder buffer = new StringBuilder("");
         for(int i=0;i<categories.size();++i){
             String catagory = categories.get(i);
@@ -30,8 +29,7 @@ public class CurrentProduct {
             }
         }
         Log.d("product", "buffer " + buffer.toString());
-        msg.setIsMe(false);
-        msg.setMsg(buffer.toString());
-        return msg;
+
+        return buffer.toString();
     }
 }
