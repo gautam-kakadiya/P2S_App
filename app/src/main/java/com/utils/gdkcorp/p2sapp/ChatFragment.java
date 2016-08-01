@@ -11,12 +11,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.TextView;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,6 +32,7 @@ import opennlp.tools.tokenize.TokenizerME;
 import opennlp.tools.tokenize.TokenizerModel;
 import opennlp.tools.util.InvalidFormatException;
 import opennlp.tools.util.Span;
+import opennlp.tools.util.StringUtil;
 
 
 /**
@@ -58,6 +62,10 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
     private boolean dont_create_product = false;
     private int prod_exist_no = -1;
     private int current_prod_no = -1;
+    private boolean prod_confirmed = false;
+    private int contains_int = -1;
+    private boolean want_credit = false;
+    private int options_flag =-1;
     ArrayList<DetectedProduct> prod_list = new ArrayList<DetectedProduct>();
 
     public ChatFragment() {
@@ -98,7 +106,46 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
         View v = inflater.inflate(R.layout.fragment_chat, container, false);
         send_button = (ImageButton) v.findViewById(R.id.send_button);
         edit_chat_msg = (EditText) v.findViewById(R.id.edit_msg);
+        edit_chat_msg.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
+                boolean handle = false;
+                if(actionId == EditorInfo.IME_ACTION_DONE){
+                    sendFunction(textView);
+                    handle = true;
+                }
+                return handle;
+            }
+        });
         return v;
+    }
+
+    private void sendFunction(TextView textView) {
+        contains_int = -1;
+        if (edit_chat_msg.getText().toString().equalsIgnoreCase("")) {
+            edit_chat_msg.setError("Enter some text first");
+        } else if (ok_message_flag != 0) {
+            String message = edit_chat_msg.getText().toString();
+            edit_chat_msg.setText("");
+            hideKeyboard(textView);
+            generateChatMessage(message, true, false);
+            generateTypingResponce();
+            Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    generateChatMessage("ok", false, true);
+                }
+            }, 2000);
+            ok_message_flag = 0;
+        } else {
+            String message = edit_chat_msg.getText().toString();
+            edit_chat_msg.setText("");
+            hideKeyboard(textView);
+            generateChatMessage(message, true, false);
+            generateTypingResponce();
+            new TokenizeAsyncTask().execute(message);
+        }
     }
 
     @Override
@@ -109,12 +156,13 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
         adapter = new ChatRecyclerViewAdapter(getActivity(), list);
         chat_rview.setLayoutManager(layoutManager);
         chat_rview.setAdapter(adapter);
-
         send_button.setOnClickListener(this);
     }
 
+
     @Override
     public void onClick(View view) {
+        contains_int = -1;
         if (edit_chat_msg.getText().toString().equalsIgnoreCase("")) {
             edit_chat_msg.setError("Enter some text first");
         } else if (ok_message_flag != 0) {
@@ -138,25 +186,6 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
             generateChatMessage(message, true, false);
             generateTypingResponce();
             new TokenizeAsyncTask().execute(message);
-
-
-           /* ChatMessage chatMessage = new ChatMessage();
-            chatMessage.setMsg(edit_chat_msg.getText().toString());
-            chatMessage.setIsMe(true);
-            adapter.addMsg(chatMessage);
-            edit_chat_msg.setText("");
-            chat_rview.scrollToPosition(adapter.getItemCount() - 1);
-            View view1 = getActivity().getCurrentFocus();
-            if (view1 != null) {
-                InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-            }
-            try {
-                responce(chatMessage.getMsg());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }*/
-
         }
 
     }
@@ -189,6 +218,24 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
             adapter.addMsg(msg);
         }
         chat_rview.scrollToPosition(adapter.getItemCount() - 1);
+    }
+
+    private void generateChatMessageWithDelay(final String s, final boolean isMe, final boolean replaceLast) {
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                ChatMessage msg = new ChatMessage();
+                msg.setMsg(s);
+                msg.setIsMe(isMe);
+                if (replaceLast) {
+                    adapter.refreshlastmsg(msg);
+                } else {
+                    adapter.addMsg(msg);
+                }
+                chat_rview.scrollToPosition(adapter.getItemCount() - 1);
+            }
+        }, 2000);
     }
 
     private void hideKeyboard(View view) {
@@ -274,10 +321,12 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
             //cp.categories.add(category);
             for (int i = 0; i < prod_list.size(); ++i) {
                 DetectedProduct prod = prod_list.get(i);
-                if (prod.getBrand().equalsIgnoreCase(category)) {
-                    dont_create_product = true;
-                    current_prod_no = i;
-                    break;
+                if (prod.getCategory() != null) {
+                    if (prod.getCategory().equalsIgnoreCase(category)) {
+                        dont_create_product = true;
+                        current_prod_no = i;
+                        break;
+                    }
                 }
             }
             if (current_prod_no == -1) {
@@ -285,6 +334,8 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
                 prod.setCategory(category);
                 prod_list.add(prod);
                 current_prod_no = prod_list.size() - 1;
+            } else {
+                prod_list.get(current_prod_no).setCategory(category);
             }
         }
 
@@ -400,14 +451,27 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
             //generateChatMessage(chatMessage,false,true);
             if (current_prod_no != -1) {
                 DetectedProduct prod = prod_list.get(current_prod_no);
-                if (prod.getSub_catagory() == null) {
+                if (prod.getCategory() == null) {
+                    if(prod.getSub_catagory()!=null){
+                        generateChatMessage("Ok " + prod.getSub_catagory(),false,true);
+                        generateTypingResponce();
+                    }
+                    generateChatMessageWithDelay("Can you please specify more specifically, which product you want?", false, true);
+                    options_flag=1;
+                } else if (prod.getSub_catagory() == null) {
                     generateChatMessage("Which structure of " + prod.getCategory() + " you want?", false, true);
+                    options_flag=2;
                 } else if (prod.getBrand() == null) {
                     generateChatMessage("Which brands " + prod.getCategory() + " " + prod.getSub_catagory() + " you want?", false, true);
+                    options_flag=3;
                 } else {
                     String prod_msg = prod.generateProduct();
-                    generateChatMessage("Is this the product which you want\n" + prod_msg, false, true);
+                    generateChatMessage("Is this is what you want?\nType 'Yes' to Confirm it\n" + prod_msg, false, true);
+                    generateTypingResponce();
+                    generateChatMessageWithDelay("Or continue to modify your product", false, true);
                 }
+            } else {
+                generateChatMessage("Sorry,I didn't get you", false, true);
             }
         }
     }
@@ -424,7 +488,9 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
                 TokenizerModel model = new TokenizerModel(modelIn);
                 Tokenizer tokenizer = new TokenizerME(model);
                 String tokens[] = tokenizer.tokenize(msg);
-                Log.d("product", "doInBackground:TokenizeTask " + tokens.toString());
+                for (int i = 0; i < tokens.length; ++i) {
+                    Log.d("product", "doInBackground:TokenizeTask " + tokens[i]);
+                }
                 return tokens;
             } catch (IOException e) {
                 e.printStackTrace();
@@ -456,10 +522,14 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
             tokens = strings[0];
             loop:
             for (int i = 0; i < length; ++i) {
+                boolean isInt = isInteger(tokens[i]);
+                if (isInt) {
+                    contains_int = i;
+                }
                 switch (tokens[i].toLowerCase()) {
                     case "hi":
                     case "hello":
-                        x = (int) Math.pow(2, 16);
+                        x = 262144;
                         break loop;
                     case "what":
                         x = x | 1;
@@ -476,7 +546,7 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
                     case "which":
                         x = x | (1 << 4);
                         break;
-                    case "how":
+                    case "options":case "option":
                         x = x | (1 << 5);
                         break;
                     case "about":
@@ -490,26 +560,41 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
                     case "delivered":
                         x = x | (1 << 8);
                         break;
-                    case "give":
+                    case "give":case "place":
                         x = x | (1 << 9);
                         break;
                     case "order":
                         x = x | (1 << 10);
                         break;
-                    case "products":case "product":
+                    case "products":
+                    case "product":
                         x = x | (1 << 11);
                         break;
-                    case "structures":case "structure":
+                    case "structures":
+                    case "structure":
                         x = x | (1 << 12);
                         break;
-                    case "brands":case "brand":
+                    case "brands":
+                    case "brand":
                         x = x | (1 << 13);
                         break;
                     case "yes":
+                    case "ha":
+                    case "haan":
+                    case "han":
                         x = x | (1 << 14);
                         break;
                     case "no":
+                    case "na":
+                    case "naan":
+                    case "nan":
                         x = x | (1 << 15);
+                        break;
+                    case "credit":
+                        x = x | (1 << 16);
+                        break;
+                    case "advance":
+                        x = x | (1 << 17);
                         break;
                 }
             }
@@ -519,17 +604,32 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
         @Override
         protected void onPostExecute(Integer integer) {
             Log.d("product", "onPostExecute:checktoken " + integer);
+            int process = 0;
             if (integer != 0) {
-
                 if ((integer & 31) != 0) {
-                    if ((integer&2049) == 2049/*what products*/ || (integer&2064) == 2064/*which products*/) {
+                    if((integer & 33)==33/*What options*/ && options_flag!=-1){
+                        switch (options_flag){
+                            case 1 : generateChatMessage("1).Aluminium\n2).Chemical\n3).Commodity Polymer\n" +
+                                    "4).Engineering Polymer\n5).Kota stones\n6).Rubber Additives\n" +
+                                    "7).Steel\n8).Tiles", false, true);
+                                    options_flag=-1;
+                                break;
+                            case 2 :  generateChatMessage("1).Sheet\n2).Coil\n3).Ingot\n4).Billets....and 10 others" +
+                                    ", please specify your structure.", false, true);
+                                options_flag=-1;
+                                break;
+                            case 3 : generateChatMessage("1).Sail\n2).Tata\n3).Jindal...and many more", false, true);
+                                options_flag=-1;
+                                break;
+                        }
+                    }else if ((integer & 2049) == 2049/*what products*/ || (integer & 2064) == 2064/*which products*/) {
                         generateChatMessage("1).Aluminium\n2).Chemical\n3).Commodity Polymer\n" +
                                 "4).Engineering Polymer\n5).Kota stones\n6).Rubber Additives\n" +
                                 "7).Steel\n8).Tiles", false, true);
-                    } else if ((integer&4114) == 4114/*Which structures*/ || (integer&4097) == 4097 /*What structures*/) {
+                    } else if ((integer & 4114) == 4114/*Which structures*/ || (integer & 4097) == 4097 /*What structures*/) {
                         generateChatMessage("1).Sheet\n2).Coil\n3).Ingot\n4).Billets....and 10 others" +
                                 ", please specify your structure.", false, true);
-                    } else if ((integer&8193) == 8193/*what brands*/ || (integer&8208) == 8208/*which brands*/) {
+                    } else if ((integer & 8193) == 8193/*what brands*/ || (integer & 8208) == 8208/*which brands*/) {
                         generateChatMessage("1).Sail\n2).Tata\n3).Jindal...and many more", false, true);
                     } else {
                         generateChatMessage("Sorry,I didn't get you", false, true);
@@ -537,28 +637,79 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
 
                 } else {
 
-                    if (integer == 65536) {
+                    if (integer == 262144/*hi*/) {
                         generateChatMessage("Hello sir, How can I help you?", false, true);
-                    } else if ((integer&16384) != 0) {
-                        generateChatMessage("Then please click on the above order to confirm it,we were happy to take your request, have a nice day sir", false, true);
-                    } else if ((integer&32768)!=0) {
-                        generateChatMessage("then please re-specify wrong entries in above product",false,true);
+                    } else if ((integer & 16384) == 16384 /*yes*/) {
+                        if (current_prod_no != -1) {
+                            generateChatMessage("ok sir we have your order", false, true);
+                            prod_confirmed = true;
+                            generateTypingResponce();
+                            generateChatMessageWithDelay("What will be your payment term?\n1).Credit\n2).Advance", false, true);
+                        } else {
+                            generateChatMessage("Sorry,I didn't get you", false, true);
+                        }
+                    } else if ((integer & 32768) == 32768 /*no*/) {
+                        generateChatMessage("then please re-specify wrong entries in above product", false, true);
 
-                    } else if ((integer & (3 << 9)) != 0 /*give order*/) {
-                        generateChatMessage("Ok sir ,Will you please specify you order details," +
+                    } else if ((integer & (3 << 9)) == (3 << 9) /*give order*/) {
+                        generateChatMessage("Ok sir ,Will you please specify your order details," +
                                 " Please specify one product at a time", false, true);
-                    } else if ((integer & (3 << 6)) != 0 /*about company*/ || (integer & 128) != 0) /*company*/ {
+                    } else if ((integer & (3 << 6)) == (3 << 6) /*about company*/ || (integer & 128) != 0) /*company*/ {
                         generateChatMessage("http://www.power2sme.com/ \n Please visit our website" +
                                 " for the details about our company.", false, true);
+                    } else if ((integer & 65536) == 65536 /*Credit*/) {
+                        if (prod_confirmed == true) {
+                            want_credit = true;
+                            generateChatMessage("How many days Credit you want?\n1).7 days\n2).15 days\n" +
+                                    "3).30 days", false, true);
+                        }
+                    } else if ((integer & 131072) == 131072 /*Advance*/) {
+                        if (prod_confirmed == true) {
+                            generateChatMessage("ok sir , your order is complete ,WE ARE HAPPY " +
+                                    "TO DO BUSSINESS WITH YOU , HAVE A NICE DAY SIR", false, true);
+                            prod_list.clear();
+                            current_prod_no = -1;
+                            prod_confirmed = false;
+                            contains_int = -1;
+                            want_credit = false;
+                        }
                     } else {
-                        generateChatMessage("Sorry,I didn't get you", false, true);
+                        process = 1;
                     }
                 }
-            } else {
+            }
+            if (integer == 0 && contains_int != -1) {
+                Log.d("product", "inthis ");
+                if (prod_confirmed == true && want_credit == true) {
+                    if (Integer.parseInt(tokens[contains_int]) == 7 || Integer.parseInt(tokens[contains_int]) == 15 || Integer.parseInt(tokens[contains_int]) == 30) {
+                        generateChatMessage("ok sir , your order is complete ,WE ARE HAPPY " +
+                                "TO DO BUSSINESS WITH YOU , We will  get back to you soon sir", false, true);
+                        prod_list.clear();
+                        current_prod_no = -1;
+                        prod_confirmed = false;
+                        contains_int = -1;
+                        want_credit = false;
+                    } else {
+                        generateChatMessage("Please enter 7 , 15 , 30 days", false, true);
+                    }
+                } else {
+                    generateChatMessage("Sorry,I didn't get you", false, true);
+                }
+            } else if (integer == 0 || process != 0) {
+                Log.d("product", "In else if ");
                 new CategorizeTask().execute(tokens);
                 new SubCategorizeTask().execute(tokens);
                 new BrandDetectionTask().execute(tokens);
             }
+        }
+    }
+
+    public boolean isInteger(String input) {
+        try {
+            Integer.parseInt(input);
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 }

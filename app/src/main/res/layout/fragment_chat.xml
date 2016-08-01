@@ -2,7 +2,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorPrimaryLight"
+    android:background="#303030"
     android:orientation="vertical"
     tools:context="com.utils.gdkcorp.p2sapp.ChatFragment">
 
@@ -30,6 +30,8 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:imeOptions="actionDone"
+            android:inputType="text"
             android:textColor="@android:color/white" />
 
         <ImageButton

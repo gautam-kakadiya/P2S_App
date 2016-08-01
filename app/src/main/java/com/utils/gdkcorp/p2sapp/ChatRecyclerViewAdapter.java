@@ -2,6 +2,8 @@ package com.utils.gdkcorp.p2sapp;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.VectorDrawable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -48,11 +50,16 @@ public class ChatRecyclerViewAdapter extends RecyclerView.Adapter<ChatRecyclerVi
         if(chatMessage.isItMe()){
             holder.root.setGravity(Gravity.RIGHT);
             holder.cv.setImageResource(R.drawable.photo);
+            Drawable drawable = context.getResources().getDrawable(R.drawable.my_chat_text_bg);
+            holder.tv.setBackground(drawable);
             holder.tv.setText(chatMessage.getMsg());
         }else{
             holder.root.setGravity(Gravity.LEFT);
             holder.cv.setImageResource(R.drawable.account_circle);
+            Drawable drawable = context.getResources().getDrawable(R.drawable.my_chat_text_bg1);
+            holder.tv.setBackground(drawable);
             holder.tv.setText(chatMessage.getMsg());
+
         }
     }
 
@@ -83,14 +90,14 @@ public class ChatRecyclerViewAdapter extends RecyclerView.Adapter<ChatRecyclerVi
             cv = (CircleImageView) itemView.findViewById(R.id.chat_circleImageView);
             tv = (TextView) itemView.findViewById(R.id.chat_msg_text_view);
             root = (LinearLayout) itemView.findViewById(R.id.linear_layout_chat_item);
-            tv.setOnClickListener(new View.OnClickListener() {
+           /* tv.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     ConfirmProductDialog dialog = new ConfirmProductDialog();
                     dialog.show(context.getFragmentManager(),"yDialog");
 
                 }
-            });
+            });*/
         }
     }
 
