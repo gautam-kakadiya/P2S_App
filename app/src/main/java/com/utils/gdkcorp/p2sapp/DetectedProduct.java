@@ -9,6 +9,16 @@ public class DetectedProduct {
     private String sub_catagory;
     private String brand;
     private String deliveryTime;
+    private String payment_term;
+
+    public void setPayment_term(String payment_term) {
+        this.payment_term = payment_term;
+    }
+
+    public String getPayment_term() {
+        return payment_term;
+    }
+
 
     public String getBrand() {
         return brand;

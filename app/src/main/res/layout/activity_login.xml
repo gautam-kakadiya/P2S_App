@@ -14,8 +14,9 @@
     tools:context="com.utils.gdkcorp.p2sapp.LoginActivity">
 
     <ImageView
-        android:layout_width="240dp"
-        android:layout_height="240dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.5"
         android:src="@drawable/login_art"
         android:layout_margin="4dp"/>
     <LinearLayout

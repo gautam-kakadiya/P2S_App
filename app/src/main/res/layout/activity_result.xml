@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="com.utils.gdkcorp.p2sapp.ResultActivity">
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:text="Total Possible SKU's"
+        android:textSize="48sp" />
+    <TextView
+        android:id="@+id/recordstv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:gravity="center_horizontal"
+        android:text="512"
+        android:textSize="80sp"/>
+
+    <LinearLayout
+        android:layout_gravity="bottom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Chat Summary"
+            android:layout_margin="16dp"
+            android:textSize="32sp"
+            android:gravity="center_horizontal"/>
+        <TextView
+            android:id="@+id/category"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Category:"
+            android:textSize="16sp"/>
+        <TextView
+            android:id="@+id/subCategory"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sub-Category:"
+            android:textSize="16sp"/>
+        <TextView
+            android:id="@+id/brand"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Brand:"
+            android:textSize="16sp"/>
+        <TextView
+            android:id="@+id/paymentTerm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Payment-Term:"
+            android:textSize="16sp"/>
+    </LinearLayout>
+</FrameLayout>

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.IntegerRes;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
@@ -65,8 +66,16 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
     private boolean prod_confirmed = false;
     private int contains_int = -1;
     private boolean want_credit = false;
-    private int options_flag =-1;
+    private int options_flag = -1;
     ArrayList<DetectedProduct> prod_list = new ArrayList<DetectedProduct>();
+    public DetectedProduct current_product = new DetectedProduct();
+    private int yes_flag = 0;
+    private boolean check_subcat_while_brand = false;
+    private boolean check_subcat_while_all=false;
+    String[] aluminiumSubCat = new String[]{"Sheet"};
+    String[] steelSubCat = new String[]{"Sheet", "Beam", "Billet", "Channel", "Coil", "Coulumn", "Flat", "Ingot", "Joist", "Pipe", "Plate", "Purlin",
+            "Angle", "Strip", "TMT", "Double-Arm-Decorative-Bracket", "Foundation-Bolts", "Octagonal-Pole", "Rectangualr-Bar", "Rectangular-Tube",
+            "Scrap-Profile-Plate", "Single-Arm-Decorative-Bracket", "Square-Bar", "Square-Tube", "Wire-Rods", "Zinc-Ingot"};
 
     public ChatFragment() {
         // Required empty public constructor
@@ -110,7 +119,7 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
             @Override
             public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
                 boolean handle = false;
-                if(actionId == EditorInfo.IME_ACTION_DONE){
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
                     sendFunction(textView);
                     handle = true;
                 }
@@ -207,6 +216,19 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
             }
         }, 1000);
     }
+    private void generateTypingResponceWithDelay(int delay) {
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                ChatMessage chat_msg = new ChatMessage();
+                chat_msg.setMsg("Typing...");
+                chat_msg.setIsMe(false);
+                adapter.addMsg(chat_msg);
+                chat_rview.scrollToPosition(adapter.getItemCount() - 1);
+            }
+        }, delay);
+    }
 
     private void generateChatMessage(String s, boolean isMe, boolean replaceLast) {
         ChatMessage msg = new ChatMessage();
@@ -220,7 +242,7 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
         chat_rview.scrollToPosition(adapter.getItemCount() - 1);
     }
 
-    private void generateChatMessageWithDelay(final String s, final boolean isMe, final boolean replaceLast) {
+    private void generateChatMessageWithDelay(final String s, final boolean isMe, final boolean replaceLast,int delay) {
         Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
             @Override
@@ -235,7 +257,7 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
                 }
                 chat_rview.scrollToPosition(adapter.getItemCount() - 1);
             }
-        }, 2000);
+        }, delay);
     }
 
     private void hideKeyboard(View view) {
@@ -452,26 +474,27 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
             if (current_prod_no != -1) {
                 DetectedProduct prod = prod_list.get(current_prod_no);
                 if (prod.getCategory() == null) {
-                    if(prod.getSub_catagory()!=null){
-                        generateChatMessage("Ok " + prod.getSub_catagory(),false,true);
-                        generateTypingResponce();
+                    if (prod.getSub_catagory() != null) {
+                        generateChatMessageWithDelay("Ok " + prod.getSub_catagory(), false, true,2000);
+                        new CheckSubCatagory().execute(prod.getSub_catagory());
+                        generateTypingResponceWithDelay(2000);
                     }
-                    generateChatMessageWithDelay("Can you please specify more specifically, which product you want?", false, true);
-                    options_flag=1;
                 } else if (prod.getSub_catagory() == null) {
-                    generateChatMessage("Which structure of " + prod.getCategory() + " you want?", false, true);
-                    options_flag=2;
+                    generateChatMessageWithDelay("Which structure of " + prod.getCategory() + " you want?", false, true,2000);
+                    options_flag = 2;
                 } else if (prod.getBrand() == null) {
-                    generateChatMessage("Which brands " + prod.getCategory() + " " + prod.getSub_catagory() + " you want?", false, true);
-                    options_flag=3;
+                    check_subcat_while_brand= true;
+                    Log.d("product", "while brand ");
+                    new CheckSubCatagory().execute(prod.getSub_catagory());
+
                 } else {
-                    String prod_msg = prod.generateProduct();
-                    generateChatMessage("Is this is what you want?\nType 'Yes' to Confirm it\n" + prod_msg, false, true);
-                    generateTypingResponce();
-                    generateChatMessageWithDelay("Or continue to modify your product", false, true);
+                    Log.d("product", "while all ");
+                    check_subcat_while_all=true;
+                    new CheckSubCatagory().execute(prod.getSub_catagory());
+
                 }
             } else {
-                generateChatMessage("Sorry,I didn't get you", false, true);
+                generateChatMessageWithDelay("Sorry,I didn't get you", false, true,2000);
             }
         }
     }
@@ -527,7 +550,7 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
                     contains_int = i;
                 }
                 switch (tokens[i].toLowerCase()) {
-                    case "hi":
+                    case "hi":case "hii":case "hiii":case "helo":case "hey":
                     case "hello":
                         x = 262144;
                         break loop;
@@ -546,7 +569,8 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
                     case "which":
                         x = x | (1 << 4);
                         break;
-                    case "options":case "option":
+                    case "options":
+                    case "option":
                         x = x | (1 << 5);
                         break;
                     case "about":
@@ -560,7 +584,8 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
                     case "delivered":
                         x = x | (1 << 8);
                         break;
-                    case "give":case "place":
+                    case "give":
+                    case "place":
                         x = x | (1 << 9);
                         break;
                     case "order":
@@ -593,7 +618,7 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
                     case "credit":
                         x = x | (1 << 16);
                         break;
-                    case "advance":
+                    case "advance":case "adv":
                         x = x | (1 << 17);
                         break;
                 }
@@ -607,66 +632,91 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
             int process = 0;
             if (integer != 0) {
                 if ((integer & 31) != 0) {
-                    if((integer & 33)==33/*What options*/ && options_flag!=-1){
-                        switch (options_flag){
-                            case 1 : generateChatMessage("1).Aluminium\n2).Chemical\n3).Commodity Polymer\n" +
-                                    "4).Engineering Polymer\n5).Kota stones\n6).Rubber Additives\n" +
-                                    "7).Steel\n8).Tiles", false, true);
-                                    options_flag=-1;
+                    if ((integer & 33) == 33/*What options*/ && options_flag != -1) {
+                        switch (options_flag) {
+                            case 1:
+                                generateChatMessageWithDelay("Aluminium\nChemical\nCommodity Polymer\n" +
+                                        "Engineering Polymer\nKota stones\nRubber Additives\n" +
+                                        "Steel\nTiles", false, true,2000);
+                                options_flag = -1;
                                 break;
-                            case 2 :  generateChatMessage("1).Sheet\n2).Coil\n3).Ingot\n4).Billets....and 10 others" +
-                                    ", please specify your structure.", false, true);
-                                options_flag=-1;
+                            case 2:
+                                generateChatMessageWithDelay("Sheet\nCoil\nIngot\nBillets....and 10 others" +
+                                        ", please specify your structure.", false, true,2000);
+                                options_flag = -1;
                                 break;
-                            case 3 : generateChatMessage("1).Sail\n2).Tata\n3).Jindal...and many more", false, true);
-                                options_flag=-1;
+                            case 3:
+                                generateChatMessageWithDelay("Sail\nTata\nJindal...and many more", false, true,2000);
+                                options_flag = -1;
                                 break;
                         }
-                    }else if ((integer & 2049) == 2049/*what products*/ || (integer & 2064) == 2064/*which products*/) {
-                        generateChatMessage("1).Aluminium\n2).Chemical\n3).Commodity Polymer\n" +
-                                "4).Engineering Polymer\n5).Kota stones\n6).Rubber Additives\n" +
-                                "7).Steel\n8).Tiles", false, true);
+                    } else if ((integer & 2049) == 2049/*what products*/ || (integer & 2064) == 2064/*which products*/) {
+                        generateChatMessageWithDelay("Aluminium\nChemical\nCommodity Polymer\n" +
+                                "Engineering Polymer\nKota stones\nRubber Additives\n" +
+                                "Steel\nTiles", false, true,2000);
                     } else if ((integer & 4114) == 4114/*Which structures*/ || (integer & 4097) == 4097 /*What structures*/) {
-                        generateChatMessage("1).Sheet\n2).Coil\n3).Ingot\n4).Billets....and 10 others" +
-                                ", please specify your structure.", false, true);
+                        generateChatMessageWithDelay("Sheet\nCoil\nIngot\nBillets....and 10 others" +
+                                ", please specify your structure.", false, true,2000);
                     } else if ((integer & 8193) == 8193/*what brands*/ || (integer & 8208) == 8208/*which brands*/) {
-                        generateChatMessage("1).Sail\n2).Tata\n3).Jindal...and many more", false, true);
+                        generateChatMessageWithDelay("Sail\nTata\nJindal...and many more", false, true,2000);
                     } else {
-                        generateChatMessage("Sorry,I didn't get you", false, true);
+                        generateChatMessageWithDelay("Sorry,I didn't get you", false, true,2000);
                     }
 
                 } else {
 
                     if (integer == 262144/*hi*/) {
-                        generateChatMessage("Hello sir, How can I help you?", false, true);
+                        generateChatMessageWithDelay("Hello sir, How can I help you?", false, true,2000);
                     } else if ((integer & 16384) == 16384 /*yes*/) {
-                        if (current_prod_no != -1) {
-                            generateChatMessage("ok sir we have your order", false, true);
+                        if (current_prod_no != -1 && yes_flag == 0) {
+                            generateChatMessageWithDelay("ok sir we have your order", false, true,2000);
                             prod_confirmed = true;
-                            generateTypingResponce();
-                            generateChatMessageWithDelay("What will be your payment term?\n1).Credit\n2).Advance", false, true);
+                            generateTypingResponceWithDelay(2000);
+                            generateChatMessageWithDelay("What will be your payment term?\nCredit\nor\nAdvance", false, true,4000);
+                        } else if (yes_flag == 2) {
+                            generateChatMessageWithDelay("Ok",false,true,2000);
+                            prod_list.get(current_prod_no).setCategory("Steel");
+                            generateTypingResponceWithDelay(2000);
+                            DetectedProduct prod = prod_list.get(current_prod_no);
+                            generateChatMessageWithDelay("Which brands " + prod.getCategory() + " " + prod.getSub_catagory() + " you want?", false, true,4000);
+                            options_flag = 3;
+                            yes_flag=0;
                         } else {
-                            generateChatMessage("Sorry,I didn't get you", false, true);
+                            generateChatMessageWithDelay("Sorry,I didn't get you", false, true,2000);
                         }
                     } else if ((integer & 32768) == 32768 /*no*/) {
-                        generateChatMessage("then please re-specify wrong entries in above product", false, true);
-
+                        if(yes_flag==2){
+                            generateChatMessageWithDelay("We dont have "+prod_list.get(current_prod_no).getSub_catagory()+
+                                    " in any other metal category,SORRY",false,true,2000);
+                            generateTypingResponceWithDelay(2000);
+                            generateChatMessageWithDelay("But still if you have other orders you can specify",false,true,4000);
+                            yes_flag=0;
+                            prod_list.clear();
+                            current_prod_no = -1;
+                            prod_confirmed = false;
+                            contains_int = -1;
+                            want_credit = false;
+                        }else {
+                            generateChatMessageWithDelay("then please re-specify wrong entries in above product", false, true,2000);
+                        }
                     } else if ((integer & (3 << 9)) == (3 << 9) /*give order*/) {
-                        generateChatMessage("Ok sir ,Will you please specify your order details," +
-                                " Please specify one product at a time", false, true);
+                        generateChatMessageWithDelay("Ok sir ,Will you please specify your order details," +
+                                " Please specify one product at a time", false, true,2000);
                     } else if ((integer & (3 << 6)) == (3 << 6) /*about company*/ || (integer & 128) != 0) /*company*/ {
-                        generateChatMessage("http://www.power2sme.com/ \n Please visit our website" +
-                                " for the details about our company.", false, true);
+                        generateChatMessageWithDelay("http://www.power2sme.com/ \n Please visit our website" +
+                                " for the details about our company.", false, true,2000);
                     } else if ((integer & 65536) == 65536 /*Credit*/) {
                         if (prod_confirmed == true) {
                             want_credit = true;
-                            generateChatMessage("How many days Credit you want?\n1).7 days\n2).15 days\n" +
-                                    "3).30 days", false, true);
+                            generateChatMessageWithDelay("How many days Credit you want?\n1).7 days\n2).15 days\n" +
+                                    "3).30 days", false, true,2000);
                         }
                     } else if ((integer & 131072) == 131072 /*Advance*/) {
                         if (prod_confirmed == true) {
-                            generateChatMessage("ok sir , your order is complete ,WE ARE HAPPY " +
-                                    "TO DO BUSSINESS WITH YOU , HAVE A NICE DAY SIR", false, true);
+                            generateChatMessageWithDelay("ok sir , your order is complete ,WE ARE HAPPY " +
+                                    "TO DO BUSSINESS WITH YOU , HAVE A NICE DAY SIR", false, true,2000);
+                            prod_list.get(current_prod_no).setPayment_term("Advance");
+                            current_product = prod_list.get(current_prod_no);
                             prod_list.clear();
                             current_prod_no = -1;
                             prod_confirmed = false;
@@ -682,24 +732,133 @@ public class ChatFragment extends Fragment implements View.OnClickListener {
                 Log.d("product", "inthis ");
                 if (prod_confirmed == true && want_credit == true) {
                     if (Integer.parseInt(tokens[contains_int]) == 7 || Integer.parseInt(tokens[contains_int]) == 15 || Integer.parseInt(tokens[contains_int]) == 30) {
-                        generateChatMessage("ok sir , your order is complete ,WE ARE HAPPY " +
-                                "TO DO BUSSINESS WITH YOU , We will  get back to you soon sir", false, true);
+                        generateChatMessageWithDelay("ok sir , your order is complete ,WE ARE HAPPY " +
+                                "TO DO BUSSINESS WITH YOU , We will  get back to you soon sir", false, true,2000);
+                        prod_list.get(current_prod_no).setPayment_term("Credit of "+Integer.parseInt(tokens[contains_int])+" Days");
+                        current_product = prod_list.get(current_prod_no);
                         prod_list.clear();
                         current_prod_no = -1;
                         prod_confirmed = false;
                         contains_int = -1;
                         want_credit = false;
                     } else {
-                        generateChatMessage("Please enter 7 , 15 , 30 days", false, true);
+                        generateChatMessageWithDelay("Please enter 7 , 15 , 30 days", false, true,2000);
                     }
                 } else {
-                    generateChatMessage("Sorry,I didn't get you", false, true);
+                    generateChatMessageWithDelay("Sorry,I didn't get you", false, true,2000);
                 }
             } else if (integer == 0 || process != 0) {
                 Log.d("product", "In else if ");
                 new CategorizeTask().execute(tokens);
                 new SubCategorizeTask().execute(tokens);
                 new BrandDetectionTask().execute(tokens);
+            }
+        }
+    }
+
+    public class CheckSubCatagory extends AsyncTask<String, Void, Integer> {
+
+        @Override
+        protected Integer doInBackground(String... strings) {
+            if(check_subcat_while_brand==false && check_subcat_while_all==false) {
+                int c = 0;
+                int length = aluminiumSubCat.length;
+                for (int i = 0; i < length; ++i) {
+                    if (strings[0].equalsIgnoreCase(aluminiumSubCat[i])) {
+                        c = 5;
+                        break;
+                    }
+                }
+                length = steelSubCat.length;
+                for (int i = 0; i < length; ++i) {
+                    if (strings[0].equalsIgnoreCase(steelSubCat[i])) {
+                        ++c;
+                        break;
+                    }
+                }
+                return c;
+            }else if(check_subcat_while_brand==true){
+                int c=2;
+                DetectedProduct prod = prod_list.get(current_prod_no);
+
+                if(prod.getCategory().equalsIgnoreCase("Aluminium")) {
+                    int length = aluminiumSubCat.length;
+                    for (int i = 0; i < length; ++i) {
+                        if (prod.getSub_catagory().equalsIgnoreCase(aluminiumSubCat[i])){
+                            c=8;
+                            break;
+                        }
+                    }
+                }else{
+                    int length = steelSubCat.length;
+                    for (int i = 0; i < length; ++i) {
+                        if (prod.getSub_catagory().equalsIgnoreCase(steelSubCat[i])){
+                            c=8;
+                            break;
+                        }
+                    }
+                }
+                check_subcat_while_brand=false;
+                return c;
+
+            }else if(check_subcat_while_all==true){
+                int c=3;
+                DetectedProduct prod = prod_list.get(current_prod_no);
+
+                if(prod.getCategory().equalsIgnoreCase("Aluminium")) {
+                    int length = aluminiumSubCat.length;
+                    for (int i = 0; i < length; ++i) {
+                        if (prod.getSub_catagory().equalsIgnoreCase(aluminiumSubCat[i])){
+                            c=7;
+                            break;
+                        }
+                    }
+                }else{
+                    int length = steelSubCat.length;
+                    for (int i = 0; i < length; ++i) {
+                        if (prod.getSub_catagory().equalsIgnoreCase(steelSubCat[i])){
+                            c=7;
+                            break;
+                        }
+                    }
+                }
+                check_subcat_while_all=false;
+                return c;
+            }
+            return 0;
+        }
+
+        @Override
+        protected void onPostExecute(Integer integer) {
+            Log.d("product", "checkInteger " + integer);
+            if (integer==6) {
+                generateChatMessageWithDelay("Can you please specify more specifically, which product you want?", false, true,4000);
+                options_flag = 1;
+            } else if(integer==1){
+                generateChatMessageWithDelay("Do you want steel " + prod_list.get(current_prod_no).getSub_catagory() + "?", false, true,4000);
+                yes_flag = 2;
+            } else if(integer==8){
+                DetectedProduct prod = prod_list.get(current_prod_no);
+                generateChatMessageWithDelay("Which brands " + prod.getCategory() + " " + prod.getSub_catagory() + " you want?", false, true,4000);
+                options_flag = 3;
+            } else if(integer==2 || integer==3){
+                DetectedProduct prod = prod_list.get(current_prod_no);
+                generateChatMessageWithDelay("SORRY sir, We dont have "+prod.getCategory()+" "+prod.getSub_catagory(),false,true,4000);
+                generateTypingResponceWithDelay(4000);
+                generateChatMessageWithDelay("But still if you have other orders you can specify",false,true,5000);
+                prod_list.clear();
+                current_prod_no = -1;
+                prod_confirmed = false;
+                contains_int = -1;
+                want_credit = false;
+            } else if(integer==7){
+                DetectedProduct prod = prod_list.get(current_prod_no);
+                String prod_msg = prod.generateProduct();
+                generateChatMessageWithDelay("Is this is what you want?\nType 'Yes' to Confirm it\n" + prod_msg, false, true,4000);
+                generateTypingResponceWithDelay(4000);
+                generateChatMessageWithDelay("Or continue to modify your product", false, true,5000);
+            }else{
+                generateChatMessageWithDelay("please re-specify your product",false,true,4000);
             }
         }
     }
