@@ -62,7 +62,7 @@ public class ResultActivity extends AppCompatActivity {
         String tag_json_obj = "json_obj_req";
 
         String url = "http://www.power2sme.com/p2sapi/ws/v3/skuList?longdesc="+long_desc+"&category="+category+
-                "&sub+category="+sub_category+"&brand="+brands;
+                "&subcategory="+sub_category+"&brand="+brands;
 
         final ProgressDialog pDialog = new ProgressDialog(this);
         pDialog.setMessage("Loading...");
